@@ -75,6 +75,10 @@ refinement of this loop.
 
 In principle one tool (`bash`) is enough. The last commit adds a second, `colorise_text`, to show that a new tool is just a function, a schema in `TOOLS` and one line in `FUNCTIONS`. Often you'll see more tools such as `read_file`, `write_file` and `edit_file` - feel free to add them if you like.
 
+Project instructions are just as plain. This repo has its own `AGENTS.md` saying
+"You always reply in lower case." Run the agent from inside this folder and it
+will. An `AGENTS.md` is nothing more than text added to the system prompt.
+
 ## Reading guide
 
 The git history is the tutorial. Each step adds one idea and leaves a working
