@@ -4,8 +4,8 @@ The simplest coding agent. One file, no dependencies.
 
 ## Why this exists
 
-Coding agents can feel like magic, but there isn't much to them. I wanted to
-show, in plain code, how the pieces fit together:
+Coding agents can seem opaque but, at their core, there isn't much to them. I wanted to
+simply show how the pieces fit together:
 
 - **The loop** - a language model in a `while` loop. It asks for a tool, the
   agent runs it, and the result goes back in.
