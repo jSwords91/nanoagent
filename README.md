@@ -73,11 +73,11 @@ text. Everything else in a real coding agent (permission prompts, file editing
 tools, project instructions, context compaction, subagents, a fancy UI) is a
 refinement of this loop.
 
-Here I give just one tool (`bash`), but in principle this is enough. Often you'll see more tools such as `read_file`, `write_file` and `edit_file` - feel free to add them if you like.
+In principle one tool (`bash`) is enough. The last commit adds a second, `colorise_text`, to show that a new tool is just a function, a schema in `TOOLS` and one line in `FUNCTIONS`. Often you'll see more tools such as `read_file`, `write_file` and `edit_file` - feel free to add them if you like.
 
 ## Reading guide
 
-The git history is the tutorial. Each commit adds one idea and leaves a working
+The git history is the tutorial. Each step adds one idea and leaves a working
 program:
 
 1. **README** - this file.
@@ -86,5 +86,6 @@ program:
 4. **safety** - confirm each command and time out long-running ones.
 5. **system prompt** - tell the model where it is.
 6. **skills** - instructions the model loads only when it needs them.
+7. **tools** - a second tool, to show how little it takes to add one.
 
 Read them in order with `git log --reverse -p`.

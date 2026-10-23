@@ -34,8 +34,25 @@ TOOLS = [{
         "properties": {"command": {"type": "string"}},
         "required": ["command"],
     },
+},{
+    "type": "function",
+    "name": "colorise_text",
+    "description": "Colorise text in the terminal using ANSI escape codes.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "text": {"type": "string"},
+            "color": {
+                "type": "string",
+                "description": "An ANSI colour code, e.g. 31 red, 33 yellow, 32 green, 36 cyan, 34 blue, 35 magenta.",
+            },
+        },
+        "required": ["text", "color"],
+    },
 }]
 
+def colorise_text(text, color):
+    return f"\033[{color}m{text}\033[0m"
 
 def bash(command, timeout=120):
     try:
@@ -49,7 +66,7 @@ def bash(command, timeout=120):
     return output
 
 
-FUNCTIONS = {"bash": bash}  # tool name -> the Python function that runs it
+FUNCTIONS = {"bash": bash, "colorise_text": colorise_text}  # tool name -> the Python function that runs it
 
 
 def complete(messages, tools):
