@@ -1,6 +1,7 @@
 """nanoagent: the simplest coding agent that actually works."""
 import json
 import os
+import platform
 import subprocess
 import urllib.error
 import urllib.request
@@ -64,8 +65,17 @@ def complete(messages, tools):
         raise SystemExit(f"API error {e.code}: {e.read().decode()}")
 
 
+def system_prompt():
+    prompt = (
+        f"You are a coding agent working in {os.getcwd()} on {platform.system()}."
+    )
+    if os.path.exists("AGENTS.md"):  # per-project instructions, the convention most agents share
+        prompt += "\n\nProject instructions from AGENTS.md:\n" + open("AGENTS.md").read()
+    return prompt
+
+
 def main():
-    messages = []
+    messages = [{"role": "system", "content": system_prompt()}]
     while True:
         try:
             messages.append({"role": "user", "content": input("> ")})
