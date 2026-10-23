@@ -2,6 +2,23 @@
 
 The simplest coding agent. One file, no dependencies.
 
+## Why this exists
+
+Coding agents can feel like magic, but there isn't much to them. I wanted to
+show, in plain code, how the pieces fit together:
+
+- **The loop** - a language model in a `while` loop. It asks for a tool, the
+  agent runs it, and the result goes back in.
+- **Tools** - plain Python functions, described to the model with a small
+  schema. Here that's mainly `bash`.
+- **Skills** - markdown files. The model only sees each one's short
+  description, and reads the full file when it needs it.
+- **AGENTS.md** - project instructions, which are just more text in the system
+  prompt.
+
+None of these is complicated on its own. Once you've seen each one in a few
+lines, it's much easier to understand what the bigger agents are doing.
+
 ## Quickstart
 
 You need Python 3.10+ and an OpenAI API key. There is nothing to install.
