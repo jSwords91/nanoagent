@@ -35,9 +35,18 @@ TOOLS = [{
 }]
 
 
-def bash(command):
-    result = subprocess.run(command, shell=True, capture_output=True, text=True)
-    return result.stdout + result.stderr
+def bash(command, timeout=120, limit=10_000):
+    try:
+        result = subprocess.run(
+            command, shell=True, capture_output=True, text=True, errors="replace",
+            stdin=subprocess.DEVNULL, timeout=timeout,  # no stdin: a command must not steal ours
+        )
+    except subprocess.TimeoutExpired:
+        return f"Timed out after {timeout}s."
+    output = result.stdout + result.stderr
+    if len(output) > limit:  # keep the head and the tail, where errors usually are
+        output = output[:limit // 2] + "\n... (truncated) ...\n" + output[-limit // 2:]
+    return output
 
 
 def complete(messages, tools):
@@ -75,7 +84,11 @@ def main():
             for call in calls:
                 command = json.loads(call["arguments"])["command"]
                 print(f"$ {command}")
-                messages.append({"type": "function_call_output", "call_id": call["call_id"], "output": bash(command)})
+                if input("run? [y/N] ").strip().lower() == "y":
+                    result = bash(command)
+                else:
+                    result = "The user declined to run this command."
+                messages.append({"type": "function_call_output", "call_id": call["call_id"], "output": result})
 
 
 if __name__ == "__main__":
