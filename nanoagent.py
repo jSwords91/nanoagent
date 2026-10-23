@@ -1,4 +1,5 @@
 """nanoagent: the simplest coding agent that actually works."""
+import glob
 import json
 import os
 import platform
@@ -21,6 +22,7 @@ load_env()
 BASE_URL = os.environ.get("NANO_BASE_URL", "https://api.openai.com/v1")
 API_KEY = os.environ.get("NANO_API_KEY", "")
 MODEL = os.environ.get("NANO_MODEL", "gpt-6-sol")
+SKILLS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "skills")
 
 
 # The model's only tool. Everything a developer does at a terminal, it can do.
@@ -71,6 +73,13 @@ def system_prompt():
     )
     if os.path.exists("AGENTS.md"):  # per-project instructions, the convention most agents share
         prompt += "\n\nProject instructions from AGENTS.md:\n" + open("AGENTS.md").read()
+    skills = sorted(glob.glob(os.path.join(SKILLS_DIR, "*", "SKILL.md")))
+    if skills:  # only each skill's description goes in; the model reads the rest with bash when needed
+        prompt += "\n\nSkills (when a task matches one, read its file with bash before you start):"
+        for path in skills:
+            header = open(path).read().split("---")[1]  # the frontmatter between the first two ---
+            fields = dict(line.split(":", 1) for line in header.strip().splitlines())
+            prompt += f"\n- {fields['name'].strip()}: {fields['description'].strip()} ({path})"
     return prompt
 
 
