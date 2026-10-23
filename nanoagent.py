@@ -1,4 +1,4 @@
-"""nanoagent: the simplest coding agent that actually works."""
+"""nanoagent: the simplest coding agent."""
 import glob
 import json
 import os
@@ -9,7 +9,6 @@ import urllib.request
 
 
 def load_env(path=os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")):
-    # A minimal .env reader: KEY=value lines. Real environment variables win.
     if os.path.exists(path):
         for line in open(path):
             key, sep, value = line.strip().partition("=")
@@ -25,7 +24,7 @@ MODEL = os.environ.get("NANO_MODEL", "gpt-6-sol")
 SKILLS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "skills")
 
 
-# The model's only tool. Everything a developer does at a terminal, it can do.
+# tools are a list of dictionaries, each with a type, name, description, and parameters
 TOOLS = [{
     "type": "function",
     "name": "bash",
@@ -38,18 +37,19 @@ TOOLS = [{
 }]
 
 
-def bash(command, timeout=120, limit=10_000):
+def bash(command, timeout=120):
     try:
         result = subprocess.run(
             command, shell=True, capture_output=True, text=True, errors="replace",
-            stdin=subprocess.DEVNULL, timeout=timeout,  # no stdin: a command must not steal ours
+            stdin=subprocess.DEVNULL, timeout=timeout,
         )
     except subprocess.TimeoutExpired:
         return f"Timed out after {timeout}s."
     output = result.stdout + result.stderr
-    if len(output) > limit:  # keep the head and the tail, where errors usually are
-        output = output[:limit // 2] + "\n... (truncated) ...\n" + output[-limit // 2:]
     return output
+
+
+FUNCTIONS = {"bash": bash}  # tool name -> the Python function that runs it
 
 
 def complete(messages, tools):
@@ -97,16 +97,18 @@ def main():
             calls = [item for item in output if item["type"] == "function_call"]
             for item in output:
                 if item["type"] == "message":
-                    print("".join(part.get("text", "") for part in item["content"]))
+                    # make llm blue text in terminal
+                    print("\033[94m" + "".join(part.get("text", "") for part in item["content"]) + "\033[0m")
             if not calls:
                 break
             for call in calls:
-                command = json.loads(call["arguments"])["command"]
-                print(f"$ {command}")
-                if input("run? [y/N] ").strip().lower() == "y":
-                    result = bash(command)
+                print(f"{call['name']} {call['arguments']}")
+                if call["name"] not in FUNCTIONS:  # models sometimes invent tools; say so rather than crash
+                    result = f"There is no tool called {call['name']}."
+                elif input("run? [y/N] ").strip().lower() == "y":
+                    result = FUNCTIONS[call["name"]](**json.loads(call["arguments"]))
                 else:
-                    result = "The user declined to run this command."
+                    result = "The user declined this tool call."
                 messages.append({"type": "function_call_output", "call_id": call["call_id"], "output": result})
 
 
