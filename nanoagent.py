@@ -22,6 +22,7 @@ BASE_URL = os.environ.get("NANO_BASE_URL", "https://api.openai.com/v1")
 API_KEY = os.environ.get("NANO_API_KEY", "")
 MODEL = os.environ.get("NANO_MODEL", "gpt-6-sol")
 SKILLS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "skills")
+MAX_STEPS = 20  # most model calls per user message, so a confused model can't loop forever
 
 
 # tools are a list of dictionaries, each with a type, name, description, and parameters
@@ -107,8 +108,10 @@ def main():
             messages.append({"role": "user", "content": input("> ")})
         except (EOFError, KeyboardInterrupt):
             return
-        # The agent loop: keep going until the model stops asking for tools.
-        while True:
+        # The agent loop: keep going until the model stops asking for tools, or we hit MAX_STEPS.
+        steps = 0
+        while steps < MAX_STEPS:
+            steps += 1
             output = complete(messages, TOOLS)
             messages += output  # the model's reply, including any reasoning, goes back in next time
             calls = [item for item in output if item["type"] == "function_call"]
@@ -127,6 +130,8 @@ def main():
                 else:
                     result = "The user declined this tool call."
                 messages.append({"type": "function_call_output", "call_id": call["call_id"], "output": result})
+        else:  # only runs when the loop ran out of steps, not on break
+            print(f"Stopped after {MAX_STEPS} steps.")
 
 
 if __name__ == "__main__":
