@@ -3,6 +3,7 @@ import glob
 import json
 import os
 import platform
+import re
 import subprocess
 import urllib.error
 import urllib.request
@@ -50,6 +51,43 @@ TOOLS = [{
         },
         "required": ["text", "color"],
     },
+},{
+    "type": "function",
+    "name": "read",
+    "description": "Read a file.",
+    "parameters": {"type": "object", "properties": {"path": {"type": "string"}}, "required": ["path"]},
+},{
+    "type": "function",
+    "name": "write",
+    "description": "Create or overwrite a file.",
+    "parameters": {
+        "type": "object",
+        "properties": {"path": {"type": "string"}, "content": {"type": "string"}},
+        "required": ["path", "content"],
+    },
+},{
+    "type": "function",
+    "name": "edit",
+    "description": "Replace old with new in a file. old must appear exactly once.",
+    "parameters": {
+        "type": "object",
+        "properties": {"path": {"type": "string"}, "old": {"type": "string"}, "new": {"type": "string"}},
+        "required": ["path", "old", "new"],
+    },
+},{
+    "type": "function",
+    "name": "glob",
+    "description": "List files matching a glob pattern, e.g. **/*.py",
+    "parameters": {"type": "object", "properties": {"pattern": {"type": "string"}}, "required": ["pattern"]},
+},{
+    "type": "function",
+    "name": "grep",
+    "description": "Search the files under a path for a regex. Returns file:line:text.",
+    "parameters": {
+        "type": "object",
+        "properties": {"pattern": {"type": "string"}, "path": {"type": "string"}},
+        "required": ["pattern", "path"],
+    },
 }]
 
 def colorise_text(text, color):
@@ -61,7 +99,42 @@ def bash(command):
     return result.stdout + result.stderr
 
 
-FUNCTIONS = {"bash": bash, "colorise_text": colorise_text}  # tool name -> the Python function that runs it
+def read(path):
+    return open(path, errors="replace").read()
+
+
+def write(path, content):
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    with open(path, "w") as f:
+        f.write(content)
+    return f"Wrote {path}."
+
+
+def edit(path, old, new):
+    text = open(path).read()
+    if text.count(old) != 1:  # one exact match, so the model can't change the wrong spot
+        return f"old appears {text.count(old)} times in {path}; it must appear exactly once."
+    return write(path, text.replace(old, new))
+
+
+def glob_files(pattern):
+    return "\n".join(glob.glob(pattern, recursive=True)) or "No files match."
+
+
+def grep(pattern, path):
+    files = glob.glob(os.path.join(path, "**"), recursive=True) if os.path.isdir(path) else [path]
+    hits = []
+    for file in filter(os.path.isfile, files):
+        for n, line in enumerate(open(file, errors="replace"), 1):
+            if re.search(pattern, line):
+                hits.append(f"{file}:{n}:{line.rstrip()}")
+    return "\n".join(hits) or "No matches."
+
+
+FUNCTIONS = {  # tool name -> the Python function that runs it
+    "bash": bash, "colorise_text": colorise_text, "read": read, "write": write,
+    "edit": edit, "glob": glob_files, "grep": grep,
+}  # tool name -> the Python function that runs it
 
 
 def complete(messages, tools):
