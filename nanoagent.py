@@ -96,7 +96,7 @@ def system_prompt():
         prompt += "\n\nSkills (when a task matches one, read its file with bash before you start):"
         for path in skills:
             header = open(path).read().split("---")[1]  # the frontmatter between the first two ---
-            fields = dict(line.split(":", 1) for line in header.strip().splitlines())
+            fields = dict(line.split(":", 1) for line in header.strip().splitlines() if ":" in line)
             prompt += f"\n- {fields['name'].strip()}: {fields['description'].strip()} ({path})"
     return prompt
 
@@ -104,10 +104,7 @@ def system_prompt():
 def main():
     messages = [{"role": "system", "content": system_prompt()}]
     while True:
-        try:
-            messages.append({"role": "user", "content": input("> ")})
-        except (EOFError, KeyboardInterrupt):
-            return
+        messages.append({"role": "user", "content": input("> ")})
         # The agent loop: keep going until the model stops asking for tools, or we hit MAX_STEPS.
         steps = 0
         while steps < MAX_STEPS:
@@ -126,7 +123,10 @@ def main():
                 if call["name"] not in FUNCTIONS:  # models sometimes invent tools; say so rather than crash
                     result = f"There is no tool called {call['name']}."
                 elif input("run? [y/N] ").strip().lower() == "y":
-                    result = FUNCTIONS[call["name"]](**json.loads(call["arguments"]))
+                    try:  # bad arguments or a failing tool become a message to the model, not a crash
+                        result = FUNCTIONS[call["name"]](**json.loads(call["arguments"]))
+                    except Exception as e:
+                        result = f"Error: {e}"
                 else:
                     result = "The user declined this tool call."
                 messages.append({"type": "function_call_output", "call_id": call["call_id"], "output": result})
@@ -135,4 +135,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except (EOFError, KeyboardInterrupt):  # Ctrl-D or Ctrl-C at any prompt quits
+        print()
