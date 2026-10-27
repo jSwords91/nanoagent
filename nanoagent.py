@@ -144,7 +144,7 @@ def system_prompt():
         prompt += "\n\nSkills (when a task matches one, read its file with bash before you start):"
         for path in skills:
             header = open(path).read().split("---")[1]  # the frontmatter between the first two ---
-            fields = dict(line.split(":", 1) for line in header.strip().splitlines())
+            fields = dict(line.split(":", 1) for line in header.strip().splitlines() if ":" in line)
             prompt += f"\n- {fields['name'].strip()}: {fields['description'].strip()} ({path})"
     return prompt
 
@@ -152,10 +152,7 @@ def system_prompt():
 def main():
     messages = [{"role": "system", "content": system_prompt()}]
     while True:
-        try:
-            messages.append({"role": "user", "content": input("> ")})
-        except (EOFError, KeyboardInterrupt):
-            return
+        messages.append({"role": "user", "content": input("> ")})
         # The agent loop: keep going until the model stops asking for tools, or we hit MAX_STEPS.
         steps = 0
         while steps < MAX_STEPS:
@@ -186,4 +183,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except (EOFError, KeyboardInterrupt):  # Ctrl-D or Ctrl-C at any prompt quits
+        print()
