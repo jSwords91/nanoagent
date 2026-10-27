@@ -10,7 +10,8 @@ simply show how the pieces fit together:
 - **The loop** - a language model in a `while` loop. It asks for a tool, the
   agent runs it, and the result goes back in.
 - **Tools** - plain Python functions, described to the model with a small
-  schema. Here that's mainly `bash`.
+  schema. Here that's `bash`, plus the classic `read`, `write`, `edit`, `glob`
+  and `grep`.
 - **Skills** - markdown files. The model only sees each one's short
   description, and reads the full file when it needs it.
 - **AGENTS.md** - project instructions, which are just more text in the system
@@ -47,16 +48,19 @@ You need Python 3.10+ and an OpenAI API key. There is nothing to install.
    ```
 
 3. Type a request at the `>` prompt. Try `what can you do?` (the greeting skill)
-   or `what does this project do?`. Before each tool call it shows the call, e.g.
-   `bash {"command": "ls"}`, and asks `run? [y/N]`: type `y` to run it, anything
-   else to decline. Ctrl-D quits.
+   or `what does this project do?`. It shows each tool call, e.g.
+   `bash {"command": "ls"}`. The read-only tools (`read`, `glob`, `grep`) run
+   straight away. For anything else it asks `run? [y/N]`: type `y` to run it,
+   anything else to decline. Ctrl-D quits.
 
 ## Warning
 
 The `bash` tool runs real shell commands on your machine, as you, with no
 sandbox. Anything you can do from a terminal, it can do: delete files, read
 secrets (including your `.env`), push code, install packages. The `run? [y/N]`
-prompt is the only safeguard, so read every command before you type `y`. Files
+prompt is the only safeguard, so read every command before you type `y`. The
+read-only tools skip that prompt, so the model can read any file you can,
+and what it reads is sent to the API. Files
 the agent reads can contain instructions aimed at the model, so be most careful
 in code you don't trust. Use it in a git repo with your work committed, or
 inside a container or VM.
@@ -81,8 +85,9 @@ while True:
 
 This is a sketch, not the real code. The actual loop is `main()` in
 `nanoagent.py`: the same shape, but the model's reply comes back as a list of
-output items (OpenAI Responses API), its text is printed as it arrives, and you
-approve each command before it runs.
+output items (OpenAI Responses API), its text is printed after each reply, you
+approve each command that can change something, and it stops after `MAX_STEPS`
+model calls per message.
 
 The model never executes anything. It only emits text that *asks* for a tool
 call. The harness decides whether to run it and feeds the result back as more
@@ -90,7 +95,12 @@ text. Everything else in a real coding agent (permission prompts, file editing
 tools, project instructions, context compaction, subagents, a fancy UI) is a
 refinement of this loop.
 
-In principle one tool (`bash`) is enough. The last commit adds a second, `colorise_text`, to show that a new tool is just a function, a schema in `TOOLS` and one line in `FUNCTIONS`. Often you'll see more tools such as `read_file`, `write_file` and `edit_file` - feel free to add them if you like.
+In principle one tool (`bash`) is enough. `colorise_text` shows that a new tool
+is just a function, a schema in `TOOLS` and one line in `FUNCTIONS`. The classic
+file tools (`read`, `write`, `edit`, `glob`, `grep`) are each a few lines of
+Python too. They're not strictly needed, but models use them more reliably than
+`cat` and `sed`. `edit` replaces one exact piece of text, which must appear
+exactly once in the file, so the model can't change the wrong spot.
 
 Project instructions are just as plain. This repo has its own `AGENTS.md` saying
 "You always reply in lower case." Run the agent from inside this folder and it
@@ -108,5 +118,7 @@ program:
 5. **system prompt** - tell the model where it is.
 6. **skills** - instructions the model loads only when it needs them.
 7. **tools** - a second tool, to show how little it takes to add one.
+8. **step cap** - stop a confused model from looping forever.
+9. **file tools** - `read`, `write`, `edit`, `glob` and `grep`. The read-only ones run without asking.
 
 Read them in order with `git log --reverse -p`.
