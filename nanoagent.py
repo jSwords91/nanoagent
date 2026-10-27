@@ -38,21 +38,6 @@ TOOLS = [{
     },
 },{
     "type": "function",
-    "name": "colorise_text",
-    "description": "Colorise text in the terminal using ANSI escape codes.",
-    "parameters": {
-        "type": "object",
-        "properties": {
-            "text": {"type": "string"},
-            "color": {
-                "type": "string",
-                "description": "An ANSI colour code, e.g. 31 red, 33 yellow, 32 green, 36 cyan, 34 blue, 35 magenta.",
-            },
-        },
-        "required": ["text", "color"],
-    },
-},{
-    "type": "function",
     "name": "read",
     "description": "Read a file.",
     "parameters": {"type": "object", "properties": {"path": {"type": "string"}}, "required": ["path"]},
@@ -89,9 +74,6 @@ TOOLS = [{
         "required": ["pattern", "path"],
     },
 }]
-
-def colorise_text(text, color):
-    return f"\033[{color}m{text}\033[0m"
 
 def bash(command):
     result = subprocess.run(command, shell=True, capture_output=True, text=True, errors="replace",
@@ -132,8 +114,7 @@ def grep(pattern, path):
 
 
 FUNCTIONS = {  # tool name -> the Python function that runs it
-    "bash": bash, "colorise_text": colorise_text, "read": read, "write": write,
-    "edit": edit, "glob": glob_files, "grep": grep,
+    "bash": bash, "read": read, "write": write, "edit": edit, "glob": glob_files, "grep": grep,
 }  # tool name -> the Python function that runs it
 
 

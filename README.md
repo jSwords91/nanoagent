@@ -90,7 +90,7 @@ text. Everything else in a real coding agent (permission prompts, file editing
 tools, project instructions, context compaction, subagents, a fancy UI) is a
 refinement of this loop.
 
-In principle one tool (`bash`) is enough. The last commit adds a second, `colorise_text`, to show that a new tool is just a function, a schema in `TOOLS` and one line in `FUNCTIONS`. Often you'll see more tools such as `read_file`, `write_file` and `edit_file` - feel free to add them if you like.
+In principle one tool (`bash`) is enough. A new tool is just a function, a schema in `TOOLS` and one line in `FUNCTIONS`. The classic `read`, `write`, `edit`, `glob` and `grep` are here too: each is a few lines, and models use them more reliably than `cat` and `sed`.
 
 Project instructions are just as plain. This repo has its own `AGENTS.md` saying
 "You always reply in lower case." Run the agent from inside this folder and it
