@@ -95,10 +95,9 @@ text. Everything else in a real coding agent (permission prompts, file editing
 tools, project instructions, context compaction, subagents, a fancy UI) is a
 refinement of this loop.
 
-In principle one tool (`bash`) is enough. `colorise_text` shows that a new tool
-is just a function, a schema in `TOOLS` and one line in `FUNCTIONS`. The classic
-file tools (`read`, `write`, `edit`, `glob`, `grep`) are each a few lines of
-Python too. They're not strictly needed, but models use them more reliably than
+In principle one tool (`bash`) is enough. A new tool is just a function, a
+schema in `TOOLS` and one line in `FUNCTIONS`. The classic file tools (`read`,
+`write`, `edit`, `glob`, `grep`) are each a few lines of Python. They're not strictly needed, but models use them more reliably than
 `cat` and `sed`. `edit` replaces one exact piece of text, which must appear
 exactly once in the file, so the model can't change the wrong spot.
 

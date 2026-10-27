@@ -9,7 +9,10 @@ import urllib.error
 import urllib.request
 
 
-def load_env(path=os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")):
+HERE = os.path.dirname(os.path.abspath(__file__))
+
+
+def load_env(path=os.path.join(HERE, ".env")):
     if os.path.exists(path):
         for line in open(path):
             key, sep, value = line.strip().partition("=")
@@ -22,7 +25,7 @@ load_env()
 BASE_URL = os.environ.get("NANO_BASE_URL", "https://api.openai.com/v1")
 API_KEY = os.environ.get("NANO_API_KEY", "")
 MODEL = os.environ.get("NANO_MODEL", "gpt-6-sol")
-SKILLS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "skills")
+SKILLS_DIR = os.path.join(HERE, "skills")
 MAX_STEPS = 20  # most model calls per user message, so a confused model can't loop forever
 
 
@@ -49,8 +52,6 @@ TOOLS = [
     tool("glob", "List files matching a pattern.", pattern="A glob pattern, e.g. **/*.py"),
     tool("grep", "Search files for a regex. Returns file:line:text.", pattern="A Python regular expression.",
          path="A file, or a directory to search recursively, e.g. ."),
-    tool("colorise_text", "Colorise text in the terminal using ANSI escape codes.", text="The text to colorise.",
-         color="An ANSI colour code, e.g. 31 red, 33 yellow, 32 green, 36 cyan, 34 blue, 35 magenta."),
 ]
 
 
@@ -62,8 +63,7 @@ def bash(command, timeout=120):
         )
     except subprocess.TimeoutExpired:
         return f"Timed out after {timeout}s."
-    output = result.stdout + result.stderr
-    return output
+    return result.stdout + result.stderr
 
 
 def read_file(path):
@@ -101,15 +101,9 @@ def grep_files(pattern, path):
     return "\n".join(hits) or "No matches."
 
 
-def colorise_text(text, color):
-    return f"\033[{color}m{text}\033[0m"
-
-
 # tool name -> the Python function that runs it
-FUNCTIONS = {
-    "bash": bash, "read": read_file, "write": write_file, "edit": edit_file,
-    "glob": glob_files, "grep": grep_files, "colorise_text": colorise_text,
-}
+FUNCTIONS = {"bash": bash, "read": read_file, "write": write_file, "edit": edit_file,
+             "glob": glob_files, "grep": grep_files}
 READ_ONLY = {"read", "glob", "grep"}  # these can't change anything, so they run without asking
 
 
@@ -129,14 +123,12 @@ def complete(messages, tools):
 
 
 def system_prompt():
-    prompt = (
-        f"You are a coding agent working in {os.getcwd()} on {platform.system()}."
-    )
+    prompt = f"You are a coding agent working in {os.getcwd()} on {platform.system()}."
     if os.path.exists("AGENTS.md"):  # per-project instructions, the convention most agents share
         prompt += "\n\nProject instructions from AGENTS.md:\n" + open("AGENTS.md").read()
     skills = sorted(glob.glob(os.path.join(SKILLS_DIR, "*", "SKILL.md")))
-    if skills:  # only each skill's description goes in; the model reads the rest with bash when needed
-        prompt += "\n\nSkills (when a task matches one, read its file with bash before you start):"
+    if skills:  # only each skill's description goes in; the model reads the rest when needed
+        prompt += "\n\nSkills (when a task matches one, read its file before you start):"
         for path in skills:
             header = open(path).read().split("---")[1]  # the frontmatter between the first two ---
             fields = dict(line.split(":", 1) for line in header.strip().splitlines() if ":" in line)
@@ -149,15 +141,12 @@ def main():
     while True:
         messages.append({"role": "user", "content": input("> ")})
         # The agent loop: keep going until the model stops asking for tools, or we hit MAX_STEPS.
-        steps = 0
-        while steps < MAX_STEPS:
-            steps += 1
+        for _ in range(MAX_STEPS):
             output = complete(messages, TOOLS)
             messages += output  # the model's reply, including any reasoning, goes back in next time
             calls = [item for item in output if item["type"] == "function_call"]
             for item in output:
-                if item["type"] == "message":
-                    # make llm blue text in terminal
+                if item["type"] == "message":  # the model's text, in blue
                     print("\033[94m" + "".join(part.get("text", "") for part in item["content"]) + "\033[0m")
             if not calls:
                 break
