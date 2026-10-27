@@ -55,16 +55,10 @@ TOOLS = [{
 def colorise_text(text, color):
     return f"\033[{color}m{text}\033[0m"
 
-def bash(command, timeout=120):
-    try:
-        result = subprocess.run(
-            command, shell=True, capture_output=True, text=True, errors="replace",
-            stdin=subprocess.DEVNULL, timeout=timeout,
-        )
-    except subprocess.TimeoutExpired:
-        return f"Timed out after {timeout}s."
-    output = result.stdout + result.stderr
-    return output
+def bash(command):
+    result = subprocess.run(command, shell=True, capture_output=True, text=True, errors="replace",
+                            stdin=subprocess.DEVNULL, timeout=120)
+    return result.stdout + result.stderr
 
 
 FUNCTIONS = {"bash": bash, "colorise_text": colorise_text}  # tool name -> the Python function that runs it
@@ -126,7 +120,10 @@ def main():
                 if call["name"] not in FUNCTIONS:  # models sometimes invent tools; say so rather than crash
                     result = f"There is no tool called {call['name']}."
                 elif input("run? [y/N] ").strip().lower() == "y":
-                    result = FUNCTIONS[call["name"]](**json.loads(call["arguments"]))
+                    try:  # bad JSON, a timeout or a missing file: tell the model, don't crash
+                        result = FUNCTIONS[call["name"]](**json.loads(call["arguments"]))
+                    except Exception as e:
+                        result = f"Error: {e}"
                 else:
                     result = "The user declined this tool call."
                 messages.append({"type": "function_call_output", "call_id": call["call_id"], "output": result})
