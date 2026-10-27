@@ -26,6 +26,7 @@ BASE_URL = os.environ.get("NANO_BASE_URL", "https://api.openai.com/v1")
 API_KEY = os.environ.get("NANO_API_KEY", "")
 MODEL = os.environ.get("NANO_MODEL", "gpt-6-sol")
 SKILLS_DIR = os.path.join(HERE, "skills")
+MEMORY_FILE = os.path.join(HERE, "memory.md")  # notes the agent keeps for itself, across sessions and projects
 MAX_STEPS = 20  # most model calls per user message, so a confused model can't loop forever
 
 
@@ -126,6 +127,10 @@ def system_prompt():
     prompt = f"You are a coding agent working in {os.getcwd()} on {platform.system()}."
     if os.path.exists("AGENTS.md"):  # per-project instructions, the convention most agents share
         prompt += "\n\nProject instructions from AGENTS.md:\n" + open("AGENTS.md").read()
+    # memory is just a file: read back in here, written by the model with its usual tools
+    prompt += f"\n\nTo remember something for future sessions, such as a user preference, add it to {MEMORY_FILE}."
+    if os.path.exists(MEMORY_FILE):
+        prompt += "\nWhat you remember so far:\n" + open(MEMORY_FILE).read()
     skills = sorted(glob.glob(os.path.join(SKILLS_DIR, "*", "SKILL.md")))
     if skills:  # only each skill's description goes in; the model reads the rest when needed
         prompt += "\n\nSkills (when a task matches one, read its file before you start):"

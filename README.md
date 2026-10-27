@@ -16,6 +16,8 @@ simply show how the pieces fit together:
   description, and reads the full file when it needs it.
 - **AGENTS.md** - project instructions, which are just more text in the system
   prompt.
+- **Memory** - a file the model writes notes to, which goes back into the
+  system prompt next time.
 
 None of these is complicated on its own. Once you've seen each one in a few
 lines, it's much easier to understand what the bigger agents are doing.
@@ -105,6 +107,15 @@ Project instructions are just as plain. This repo has its own `AGENTS.md` saying
 "You always reply in lower case." Run the agent from inside this folder and it
 will. An `AGENTS.md` is nothing more than text added to the system prompt.
 
+Memory works the same way. Within a session, the agent's memory is the
+`messages` list: everything said so far goes back to the model on every call.
+To remember across sessions, it needs somewhere outside that list. Here that's
+`memory.md`, next to `nanoagent.py`. The system prompt includes the file and
+tells the model it can add to it. The model writes it with the same `write` and
+`edit` tools it uses on code, so you approve each new memory. `AGENTS.md` is
+what you tell the agent about a project. `memory.md` is what the agent notes
+about you, in any project.
+
 ## Reading guide
 
 The git history is the tutorial. Each step adds one idea and leaves a working
@@ -119,5 +130,7 @@ program:
 7. **tools** - a second tool, to show how little it takes to add one.
 8. **step cap** - stop a confused model from looping forever.
 9. **file tools** - `read`, `write`, `edit`, `glob` and `grep`. The read-only ones run without asking.
+10. **simplify** - drop the toy tool now that real ones show the pattern.
+11. **memory** - a file the model writes to and the system prompt reads back.
 
 Read them in order with `git log --reverse -p`.
