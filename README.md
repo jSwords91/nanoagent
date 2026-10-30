@@ -71,7 +71,7 @@ Run a model on your own machine, with no account or API key.
    python3 /path/to/nanoagent/nanoagent.py
    ```
 
-2. Type a request at the `>` prompt. Try `what can you do?` (the greeting skill)
+2. Type a request at the `>` prompt. Try `what can you do?` (the overview skill)
    or `what does this project do?`. Before each tool call it shows the call, e.g.
    `bash {"command": "ls"}`, and asks `run? [y/N]`: type `y` to run it, anything
    else to decline. Ctrl-D quits.
