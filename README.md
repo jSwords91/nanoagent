@@ -21,35 +21,62 @@ lines, it's much easier to understand what the bigger agents are doing.
 
 ## Quickstart
 
-You need Python 3.10+ and an OpenAI API key. There is nothing to install.
+You need Python 3.10+. There is nothing to install. Set up OpenAI or Ollama, then
+run it.
 
-1. Add your key. Copy the example config and fill in `NANO_API_KEY`:
+### OpenAI
+
+1. Create a key on [OpenAI's API keys page](https://platform.openai.com/api-keys).
+
+2. Create a `.env` file in the `nanoagent` folder:
 
    ```sh
-   cd nanoagent
-   cp .env.example .env
+   NANO_API_KEY=sk-...
+   NANO_MODEL=gpt-6-sol
    ```
 
-   | Variable | Default | |
-   |---|---|---|
-   | `NANO_API_KEY` | (required) | your API key |
-   | `NANO_MODEL` | `gpt-6-sol` | any model with tool calling |
-   | `NANO_BASE_URL` | `https://api.openai.com/v1` | any endpoint that speaks the OpenAI Responses API |
+Any other endpoint that speaks the OpenAI Responses API works too: set
+`NANO_BASE_URL` to it.
 
-   `.env` is read from next to `nanoagent.py` and is gitignored. Real environment
-   variables override it.
+### Ollama
 
-2. Run it from the project you want it to work on:
+Run a model on your own machine, with no account or API key.
+
+1. [Install Ollama](https://ollama.com/download), or update it if it's an old
+   version. It needs the Responses API.
+
+2. Download a model that can call tools (`gemma4:e4b` is about 10 GB):
+
+   ```sh
+   ollama pull gemma4:e4b
+   ```
+
+   `ollama list` shows what you have, and `ollama show <model>` lists `tools`
+   under `Capabilities` if the model can call them.
+
+3. Create a `.env` file in the `nanoagent` folder:
+
+   ```sh
+   NANO_BASE_URL=http://localhost:11434/v1
+   NANO_API_KEY=ollama
+   NANO_MODEL=gemma4:e4b
+   ```
+
+### Run it
+
+1. Run it from the project you want it to work on:
 
    ```sh
    cd your-project
    python3 /path/to/nanoagent/nanoagent.py
    ```
 
-3. Type a request at the `>` prompt. Try `what can you do?` (the greeting skill)
+2. Type a request at the `>` prompt. Try `what can you do?` (the greeting skill)
    or `what does this project do?`. Before each tool call it shows the call, e.g.
    `bash {"command": "ls"}`, and asks `run? [y/N]`: type `y` to run it, anything
    else to decline. Ctrl-D quits.
+
+`.env` is gitignored. Real environment variables override it.
 
 ## Warning
 
@@ -79,11 +106,6 @@ while True:
     print(reply.content)
 ```
 
-This is a sketch, not the real code. The actual loop is `main()` in
-`nanoagent.py`: the same shape, but the model's reply comes back as a list of
-output items (OpenAI Responses API), its text is printed as it arrives, and you
-approve each command before it runs.
-
 The model never executes anything. It only emits text that *asks* for a tool
 call. The harness decides whether to run it and feeds the result back as more
 text. Everything else in a real coding agent (permission prompts, file editing
@@ -107,6 +129,5 @@ program:
 4. **safety** - confirm each command and time out long-running ones.
 5. **system prompt** - tell the model where it is.
 6. **skills** - instructions the model loads only when it needs them.
-7. **tools** - a second tool, to show how little it takes to add one.
 
 Read them in order with `git log --reverse -p`.
