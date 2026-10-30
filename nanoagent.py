@@ -114,4 +114,4 @@ if __name__ == "__main__":
     try:
         main()
     except (EOFError, KeyboardInterrupt):  # Ctrl-D or Ctrl-C at any prompt quits
-        print()
+        print("\nExiting...")
