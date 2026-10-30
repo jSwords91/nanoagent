@@ -1,9 +1,9 @@
 ---
-name: greeting
-description: Introduce yourself with the nanoagent banner. Use when the user asks what you are, what you can do, or what you can help with.
+name: overview
+description: Use when the user asks what you are, what you can do, or what you can help with.
 ---
 
-# Greeting
+# Overview
 
 Reply with this banner in a plain code block, exactly as written:
 
